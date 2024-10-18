@@ -1,0 +1,4 @@
+crystal 1.11.2
+ruby 3.3.0
+direnv 2.34.0
+duckdb 1.0.0

@@ -1,0 +1,42 @@
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 21 * * *"
+concurrency: commit
+jobs:
+  update_data:
+    runs-on: ubuntu-latest
+    name: Fetch latest data
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@latest
+        with:
+          chrome-version: stable
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3.0"
+          bundler-cache: true
+      - name: Config git user
+        run: |
+          git config user.name "Russell Smith"
+          git config user.email ukd1@users.noreply.github.com
+      - name: Login
+        env:
+          NV_ENERGY_USER: ${{ secrets.NV_ENERGY_USER }}
+          NV_ENERGY_PASS: ${{ secrets.NV_ENERGY_PASS }}
+        run: |
+          bundle exec ruby login.rb
+      - name: Update data
+        env:
+          NV_ENERGY_METER_NUMBER: ${{ secrets.NV_ENERGY_METER_NUMBER }}
+          NV_ENERGY_ACCOUNT_NUMBER: ${{ secrets.NV_ENERGY_ACCOUNT_NUMBER }}
+        run: |
+          bundle exec ruby fetch.rb
+          git add data/*.csv
+      - name: Commit changes
+        run: |
+          git commit data/ -m "Update data in run ${GITHUB_RUN_NUMBER}" || true
+      - name: Push repo
+        run: git push || true
